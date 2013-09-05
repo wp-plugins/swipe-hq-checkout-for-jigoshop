@@ -1,18 +1,18 @@
 <?php
 /*
-Plugin Name: Swipe HQ Checkout Payment Gateway
+Plugin Name: Swipe Checkout Payment Gateway
 Plugin URI: http://www.swipehq.com
-Description: This plugin extends the Jigoshop payment gateways to add Swipe HQ Payment Gateway.
-Version: 1.0
-Author: Optimizer HQ
+Description: This plugin extends the Jigoshop payment gateways to add Swipe Payment Gateway for NZ and Canada Merchants.
+Version: 2.0
+Author: Optimizer Corporation
 Author URI: http://www.optimizerhq.com
 */
 
 
-/*  Copyright 2012  Optimizer HQ  (email : support@optimizerhq.com) */
+/*  Copyright 2013  Optimizer Corporation  (email : support@optimizerhq.com) */
 
 
-/* Add Swipe HQ Checkout Payment Gateway to Jigoshop
+/* Add Swipe Checkout Payment Gateway to Jigoshop
 ------------------------------------------------------------ */
 
 add_action( 'plugins_loaded', 'swipehq_jigoshop_payment_gateway', 0 );
@@ -22,11 +22,12 @@ function swipehq_jigoshop_payment_gateway() {
 	
 		class jigoshop_swipehq_payment_gateway extends jigoshop_payment_gateway {
 		
-		public function __construct() { 
+		public function __construct() {
+                parent::__construct();          /* installs our gateway options in the settings */
         	$this->id			= 'swipehq_payment_gateway';
         	$this->icon 			= plugins_url( 'checkout-logo.png', __FILE__ );
         	$this->has_fields 		= false;
-                $this->payment_url              = 'https://payment.swipehq.com';
+                $this->payment_url              = trim(get_option( 'jigoshop_payment_url' ).'/');
 		
                 $this->enabled			= get_option( 'jigoshop_swipehq_enabled' );
                 $this->title 			= get_option( 'jigoshop_tgm_swipehq_payment_gateway_title' );
@@ -72,6 +73,12 @@ function swipehq_jigoshop_payment_gateway() {
                         </td>
 	    	</tr>
                 <tr>
+	        	<td class="titledesc"><a href="#" tip="<?php echo apply_filters( 'tgm_jigoshop_message_tooltip_description', 'List of supported currencies is available at API Credentials under Settings of your Swipe HQ Checkout Admin Page.' ); ?>" class="tips" tabindex="99"></a><?php echo apply_filters( 'tgm_jigoshop_message_tooltip_title', 'Currency Code' ) ?>:</td>
+                        <td class="forminp">
+                                <input class="input-text" type="text" name="jigoshop_currency" id="jigoshop_currency" value="<?php if ( $value = get_option( 'jigoshop_currency' ) ) echo $value; ?>" />
+                        </td>
+	    	</tr>
+                <tr>
 	        	<td class="titledesc"><a href="#" tip="<?php echo apply_filters( 'tgm_jigoshop_message_tooltip_description', 'Merchant ID is available at API Credentials under Settings of your Swipe HQ Checkout Admin Page.' ); ?>" class="tips" tabindex="99"></a><?php echo apply_filters( 'tgm_jigoshop_message_tooltip_title', 'Merchant ID' ) ?>:</td>
                         <td class="forminp">
                                 <input class="input-text wide-input" type="text" name="jigoshop_merchant_id" id="jigoshop_merchant_id" value="<?php if ( $value = get_option( 'jigoshop_merchant_id' ) ) echo $value; ?>" />
@@ -81,6 +88,18 @@ function swipehq_jigoshop_payment_gateway() {
 	        	<td class="titledesc"><a href="#" tip="<?php echo apply_filters( 'tgm_jigoshop_message_tooltip_description', 'Given to Merchant by Swipe HQ' ); ?>" class="tips" tabindex="99"></a><?php echo apply_filters( 'tgm_jigoshop_message_tooltip_title', 'API Key' ) ?>:</td>
                         <td class="forminp">
                                 <input class="input-text wide-input" type="text" name="jigoshop_api_key" id="jigoshop_api_key" value="<?php if ( $value = get_option( 'jigoshop_api_key' ) ) echo $value; ?>" />
+                        </td>
+	    	</tr>
+                <tr>
+	        	<td class="titledesc"><a href="#" tip="<?php echo apply_filters( 'tgm_jigoshop_message_tooltip_description', 'API URL is available at API Credentials under Settings of your Swipe HQ Checkout Admin Page.' ); ?>" class="tips" tabindex="99"></a><?php echo apply_filters( 'tgm_jigoshop_message_tooltip_title', 'API URL' ) ?>:</td>
+                        <td class="forminp">
+                                <input class="input-text wide-input" type="text" name="jigoshop_api_url" id="jigoshop_api_url" value="<?php if ( $value = get_option( 'jigoshop_api_url' ) ) echo $value; ?>" />
+                        </td>
+	    	</tr>
+                <tr>
+	        	<td class="titledesc"><a href="#" tip="<?php echo apply_filters( 'tgm_jigoshop_message_tooltip_description', 'Payment URL is available at API Credentials under Settings of your Swipe HQ Checkout Admin Page.' ); ?>" class="tips" tabindex="99"></a><?php echo apply_filters( 'tgm_jigoshop_message_tooltip_title', 'Payment URL' ) ?>:</td>
+                        <td class="forminp">
+                                <input class="input-text wide-input" type="text" name="jigoshop_payment_url" id="jigoshop_payment_url" value="<?php if ( $value = get_option( 'jigoshop_payment_url' ) ) echo $value; ?>" />
                         </td>
 	    	</tr>
                 <?php
@@ -98,6 +117,7 @@ function swipehq_jigoshop_payment_gateway() {
 		function thankyou_page() {
                         switch($_REQUEST['result']){
                             case 'accepted':
+                            case 'test-accepted':
                                 echo wpautop( wptexturize( 'Thank you for shopping with us. Your account has been charged and your transaction is successful. We will be shipping your order to you soon.' ) );
                             break;
                             case 'declined':
@@ -120,6 +140,9 @@ function swipehq_jigoshop_payment_gateway() {
                     if( isset( $_POST['jigoshop_api_key'] ) ) update_option( 'jigoshop_api_key', 	jigowatt_clean( $_POST['jigoshop_api_key'] ) ); else @delete_option( 'jigoshop_api_key' );
                     if( isset( $_POST['jigoshop_tgm_swipehq_payment_gateway_title'] ) ) update_option( 'jigoshop_tgm_swipehq_payment_gateway_title', 	jigowatt_clean( $_POST['jigoshop_tgm_swipehq_payment_gateway_title'] ) ); else @delete_option( 'jigoshop_tgm_swipehq_payment_gateway_title' );
                     if( isset( $_POST['jigoshop_tgm_swipehq_payment_gateway_description'] ) ) update_option( 'jigoshop_tgm_swipehq_payment_gateway_description', 	jigowatt_clean( $_POST['jigoshop_tgm_swipehq_payment_gateway_description'] ) ); else @delete_option( 'jigoshop_tgm_swipehq_payment_gateway_description' );
+                    if( isset( $_POST['jigoshop_currency'] ) ) update_option( 'jigoshop_currency', 	jigowatt_clean( $_POST['jigoshop_currency'] ) ); else @delete_option( 'jigoshop_currency' );
+                    if( isset( $_POST['jigoshop_api_url'] ) ) update_option( 'jigoshop_api_url', 	jigowatt_clean( $_POST['jigoshop_api_url'] ) ); else @delete_option( 'jigoshop_api_url' );
+                    if( isset( $_POST['jigoshop_payment_url'] ) ) update_option( 'jigoshop_payment_url', 	jigowatt_clean( $_POST['jigoshop_payment_url'] ) ); else @delete_option( 'jigoshop_payment_url' );
                 }
     	
 	
@@ -172,10 +195,11 @@ function swipehq_jigoshop_payment_gateway() {
                         'td_description'        => $product_details,
                         'td_amount'             => $order->order_total,
                         'td_default_quantity'   => 1,
-                        'td_user_data'          => $order_id
+                        'td_user_data'          => $order_id,
+                        'td_currency'           => strtoupper(trim(get_option( 'jigoshop_currency' )))
                     );
                     
-                    $response = $this->post_to_url('https://api.swipehq.com/createTransactionIdentifier.php', $params);
+                    $response = $this->post_to_url(trim(get_option( 'jigoshop_api_url' ),'/').'/createTransactionIdentifier.php', $params);
                     $response_data = json_decode($response);
                     if($response_data->response_code == 200 && !empty($response_data->data->identifier)){
                         $trans_id = $response_data->data->identifier;
@@ -261,23 +285,24 @@ function swipehq_jigoshop_payment_gateway() {
                             'identifier_id'     => $posted['identifier_id']
 
                         );
-                        $response = $this->post_to_url('https://api.swipehq.com/verifyTransaction.php', $params);
+                        $response = $this->post_to_url(trim(get_option( 'jigoshop_api_url' ),'/').'/verifyTransaction.php', $params);
                         $response_data = json_decode($response);
                         if($response_data->response_code == 200){
-                            if($response_data->data->status == 'accepted' && $response_data->data->transaction_approved == 'yes'){
-                                $order->add_order_note( __('Swipe HQ Checkout payment completed.', 'jigoshop') );
-                                jigoshop_log( "Swipe HQ Checkout: Swipe HQ Checkout payment completed for Order ID: " . $order->id );
+                            if(($response_data->data->status == 'accepted' || $response_data->data->status == 'test-accepted') && $response_data->data->transaction_approved == 'yes'){
+                                $is_test = ($response_data->data->status == 'test-accepted')? ' test ' : ' ';
+                                $order->add_order_note( __('Swipe Checkout'.$is_test.'payment completed. Transaction ID: '.trim($posted['transaction_id']), 'jigoshop') );
+                                jigoshop_log( "Swipe HQ Checkout: Swipe Checkout'.$is_test.'payment completed for Order ID: " . $order->id );
                                 $order->payment_complete();
                                 $order->cart->empty_cart();
                             }
                             else{
-                               $order->update_status('on-hold', sprintf(__('Payment %s via Swipe HQ Checkout.', 'jigoshop'), strtolower('Declined') ) );
-                               jigoshop_log( "Swipe HQ Checkout: Transaction " . strtolower('Declined') . "for Order ID: " . $order->id );
+                               $order->update_status('on-hold', sprintf(__('Payment %s via Swipe Checkout. Transaction ID: '.trim($posted['transaction_id']), 'jigoshop'), strtolower('Declined') ) );
+                               jigoshop_log( "Swipe Checkout: Transaction " . strtolower('Declined') . "for Order ID: " . $order->id );
                             }
                         }
                         else{
-                            $order->update_status('cancelled', sprintf(__('Payment %s via Swipe HQ Checkout.', 'jigoshop'), strtolower('Cancelled') ) );
-                            jigoshop_log( "Swipe HQ Checkout: Unauthorized Transaction for Order ID: " . $order->id );
+                            $order->update_status('cancelled', sprintf(__('Payment %s via Swipe Checkout.', 'jigoshop'), strtolower('Cancelled') ) );
+                            jigoshop_log( "Swipe Checkout: Unauthorized Transaction for Order ID: " . $order->id );
                         }
                     }
                 }

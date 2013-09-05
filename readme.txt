@@ -1,8 +1,11 @@
-=== Jigoshop Swipe HQ Payment Gateway Plugin ===
-Contributors: Optimizer HQ
-Tags: Swipe HQ Checkout, Payment Gateway, Optimizer HQ
+=== Swipe Checkout Payment Gateway - Jigoshop Extension ===
+Contributors: Optimizer Corporation
+Tags: Swipe Checkout, Payment Gateway, Optimizer Corporation
+Requires at least: 1.7.3
+Tested up to: 1.7.3
+Stable tag: 2.0
 
-Allows you to use Swipe HQ payment gateway with the jigoshop plugin.
+Allows you to use Swipe payment gateway with the Jigoshop plugin for NZ and Canada Merchants.
 
 == Description ==
 
@@ -15,17 +18,17 @@ Visit [http://www.swipehq.com]
 3. Activate the plugin through the 'Plugins' menu in WordPress
 
 To use the SwipeHQ Checkout on your website you need to become a Swipe HQ Checkout merchant.
-To set up the extension you need to define 'Merchant ID' and 'API Key'. You can find them on your merchant account under Settings -> API Credentials and copy to the SwipeHQ Checkout extension settings.
+To set up the extension you need to define 'Currency Code', 'Merchant ID', 'API Key', 'Payment Page URL' and 'API URL'. You can find them on your merchant account under Settings -> API Credentials and copy to the SwipeHQ Checkout extension settings.
 
 == Configuration ==
 
 1. Go to SwipeHQ Checkout Merchant Console
 2. Click on the Settings link across the top
 3. Click on the "Payment Notifiers" section (on the left)
-4. Tick "Pass back user_data parameter".
-5. Add the following callback URL: %yoursite%/index.php?swipehq=callback
-6. Add the following in the redirection URL:
-7. Add the following redirection URL: %yoursite%/index.php?swipehq=redirect
+4. Select 'Send them to one of my defined web pages'
+5. Enter this on the field provided below: %yoursite%/index.php?swipehq=redirect
+6. Tick "Pass back user_data parameter".
+7. Enter the following in the Live Payment Notification (LPN) URL field: %yoursite%/index.php?swipehq=callback
 
 PLEASE NOTE: you need to replace %yoursite% with your website's domain name.
 
@@ -33,3 +36,9 @@ PLEASE NOTE: you need to replace %yoursite% with your website's domain name.
 
 = 1.0 =
 * First Public Release.
+
+= 2.0 =
+* Test Mode Compatibility.
+* Added Multi-currency Support
+* Canadian merchant support
+* Minor plugin enhancements

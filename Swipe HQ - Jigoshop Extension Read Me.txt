@@ -2,7 +2,7 @@ Jigoshop Extension
 
 Requirements:
 
-    Jigoshop Plugin 1.4.4 or later
+    Jigoshop Plugin 1.7.3 or later
     Swipe HQ Checkout Merchant ID
     Swipe HQ Checkout API Key
 
@@ -25,10 +25,10 @@ In order to enable LPN, you need to set up a callback URL and URL for user redir
 1. Go to SwipeHQ Checkout Merchant Console
 2. Click on the Settings link across the top
 3. Click on the "Payment Notifiers" section (on the left)
-4. Tick "Pass back user_data parameter".
-5. Add the following callback URL: %yoursite%/index.php?swipehq=callback
-6. Add the following in the redirection URL:
-7. Add the following redirection URL: %yoursite%/index.php?swipehq=redirect
+4. Select 'Send them to one of my defined web pages'
+5. Enter this on the field provided below: %yoursite%/index.php?swipehq=redirect
+6. Tick "Pass back user_data parameter".
+7. Enter the following in the Live Payment Notification (LPN) URL field: %yoursite%/index.php?swipehq=callback
 
 PLEASE NOTE: you need to replace %yoursite% with your website's domain name.
 
