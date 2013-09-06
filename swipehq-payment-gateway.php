@@ -188,10 +188,15 @@ function swipehq_jigoshop_payment_gateway() {
                     endforeach; endif;
                     
                     //get product ID using TransactionIdentifier API
+                    $items = '';
+                    foreach ( $order->items as $item ) {
+			$_product = $order->get_product_from_item( $item );
+			$items .= $item['qty'] . ' x ' . html_entity_decode(apply_filters('jigoshop_order_product_title', $item['name'], $_product), ENT_QUOTES, 'UTF-8').', ';
+                    }
                     $params = array (
                         'merchant_id'           => get_option( 'jigoshop_merchant_id' ),
                         'api_key'               => get_option( 'jigoshop_api_key' ),
-                        'td_item'               => $order_id,
+                        'td_item'               => trim($items, ', '),
                         'td_description'        => $product_details,
                         'td_amount'             => $order->order_total,
                         'td_default_quantity'   => 1,

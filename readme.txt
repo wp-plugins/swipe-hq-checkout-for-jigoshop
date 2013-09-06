@@ -3,7 +3,7 @@ Contributors: Optimizer Corporation
 Tags: Swipe Checkout, Payment Gateway, Optimizer Corporation
 Requires at least: 1.7.3
 Tested up to: 1.7.3
-Stable tag: 2.0
+Stable tag: 2.1
 
 Allows you to use Swipe payment gateway with the Jigoshop plugin for NZ and Canada Merchants.
 
@@ -41,4 +41,7 @@ PLEASE NOTE: you need to replace %yoursite% with your website's domain name.
 * Test Mode Compatibility.
 * Added Multi-currency Support
 * Canadian merchant support
+* Minor plugin enhancements
+
+= 2.1 =
 * Minor plugin enhancements
