@@ -3,7 +3,7 @@
 Plugin Name: Swipe Checkout Payment Gateway
 Plugin URI: http://www.swipehq.com
 Description: This plugin extends the Jigoshop payment gateways to add Swipe Payment Gateway for NZ and Canada Merchants.
-Version: 2.0
+Version: 2.1
 Author: Optimizer Corporation
 Author URI: http://www.optimizerhq.com
 */
