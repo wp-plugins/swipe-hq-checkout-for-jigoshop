@@ -1,47 +1,63 @@
-=== Swipe Checkout Payment Gateway - Jigoshop Extension ===
-Contributors: Optimizer Corporation
-Tags: Swipe Checkout, Payment Gateway, Optimizer Corporation
-Requires at least: 1.7.3
-Tested up to: 1.7.3
-Stable tag: 2.1
+Jigoshop Swipe plugin
 
-Allows you to use Swipe payment gateway with the Jigoshop plugin for NZ and Canada Merchants.
+Version:	3.0.0 / 24 Sep 2013
+Copyright:	(c) 2012-2013, Optimizer Ltd.
+Link:		http://www.swipehq.com/checkout/
 
-== Description ==
+ 
 
-This is the Swipe HQ payment gateway for Jigoshop E-commerce. Allows you to use SwipeHQ payment gateway with the Jigoshop plugin. It uses the redirect method, the user is redirected to swipehq so that you don't have to install an SSL certificate on your site.
+REQUIREMENTS
+---
 
-Visit [http://www.swipehq.com]
-== Installation ==
-1. Ensure you have the latest version of Jigoshop plugin installed
-2. Unzip and upload contents of the plugin to your /wp-content/plugins/ directory
-3. Activate the plugin through the 'Plugins' menu in WordPress
+* Swipe account
+* Wordpress
+* Wordpress Jigoshop plugin
 
-To use the SwipeHQ Checkout on your website you need to become a Swipe HQ Checkout merchant.
-To set up the extension you need to define 'Currency Code', 'Merchant ID', 'API Key', 'Payment Page URL' and 'API URL'. You can find them on your merchant account under Settings -> API Credentials and copy to the SwipeHQ Checkout extension settings.
 
-== Configuration ==
+INSTALLATION
+---
 
-1. Go to SwipeHQ Checkout Merchant Console
-2. Click on the Settings link across the top
-3. Click on the "Payment Notifiers" section (on the left)
-4. Select 'Send them to one of my defined web pages'
-5. Enter this on the field provided below: %yoursite%/index.php?swipehq=redirect
-6. Tick "Pass back user_data parameter".
-7. Enter the following in the Live Payment Notification (LPN) URL field: %yoursite%/index.php?swipehq=callback
+1. Please install this plugin through the normal Wordpress installation process (Plugins -> Add New, then Search or Upload)
+2. After successful installation it will appear in the list of Plugins as "Swipe Checkout for Jigoshop", make sure to Activate the plugin
+3. Then configure Swipe, in the Plugins list, for Swipe Checkout, click on the Settings link, then add the following details 
+	from your Swipe Merchant login under Settings -> API Credentials:
+		Swipe Merchant ID
+		Swipe API Key
+		Swipe API Url
+		Swipe Payment Page Url
+5. And finally configure your Swipe account to send customers back to your shop after they pay. 
+	In your Merchant login under Settings -> Payment Notifiers, set:
+   		Callback Url:  					%YOUR_WEBSITE%/index.php?swipehq=redirect
+   		Callback pass back user data: 	on
+   		LPN Url: 						%YOUR_WEBSITE%/index.php?swipehq=callback
+	making sure to replace %YOUR_WEBSITE% with your website url, e.g. http://www.example.com/my-shop?swipehq=redirect
+6. All done, test it out, add some products to your cart and you will get the option to pay with Swipe.
 
-PLEASE NOTE: you need to replace %yoursite% with your website's domain name.
 
-== Changelog ==
+NOTES
+---
+* Jigoshop must be configured to use a currency that your Swipe Merchant Account supports for customers to be able to use Swipe as a payment option.
+	To see a list of currencies supported by Swipe see Settings -> API Credentials in your merchant account.
+	To see which currency your Jigoshop is using see Jigoshop -> Settings.
 
-= 1.0 =
-* First Public Release.
 
-= 2.0 =
-* Test Mode Compatibility.
-* Added Multi-currency Support
-* Canadian merchant support
-* Minor plugin enhancements
+CHANGE LOG
+---
 
-= 2.1 =
-* Minor plugin enhancements
+1.0
+- First Public Release.
+
+2.0
+- Test Mode Compatibility.
+- Added Multi-currency Support
+- Canadian merchant support
+- Minor plugin enhancements
+
+2.1
+- Minor plugin enhancements
+
+3.0.0
+- Major Cleanup
+- Adding Settings link in Plugins page
+- Changing currency check to be programmatic rather than done by user
+

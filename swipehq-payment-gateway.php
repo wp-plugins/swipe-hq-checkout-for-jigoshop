@@ -1,11 +1,11 @@
 <?php
 /*
-Plugin Name: Swipe Checkout Payment Gateway
+Plugin Name: Swipe Checkout for Jigoshop
 Plugin URI: http://www.swipehq.com
-Description: This plugin extends the Jigoshop payment gateways to add Swipe Payment Gateway for NZ and Canada Merchants.
-Version: 2.1
-Author: Optimizer Corporation
-Author URI: http://www.optimizerhq.com
+Description: A payment gateway for Jigoshop
+Version: 3.0.0
+Author: Swipe
+Author URI: http://www.swipehq.com
 */
 
 
@@ -15,96 +15,145 @@ Author URI: http://www.optimizerhq.com
 /* Add Swipe Checkout Payment Gateway to Jigoshop
 ------------------------------------------------------------ */
 
-add_action( 'plugins_loaded', 'swipehq_jigoshop_payment_gateway', 0 );
-function swipehq_jigoshop_payment_gateway() {
+add_action( 'plugins_loaded', 'swipehq_jigoshop', 0 );
+add_filter('plugin_action_links', 'swipe_jigoshop_action_links', 10, 2 );
+
+function swipe_jigoshop_action_links( $links, $pluginLink ){
+	if($pluginLink != 'swipe-hq-checkout-for-jigoshop/swipehq-payment-gateway.php') return $links;
+	$plugin_links = array(
+			'<a href="' . admin_url( 'admin.php?page=jigoshop_settings&tab=payment-gateways#swipe_checkout_for_jigoshop' ) . '">' . __( 'Settings', 'Optimizer' ) . '</a>',
+	);
+	return array_merge( $plugin_links, $links );
+}
+
+
+function swipehq_jigoshop() {
 	
 	if ( !class_exists( 'jigoshop_payment_gateway' ) ) return; // if the Jigoshop payment gateway class is not available, do nothing
 	
-		class jigoshop_swipehq_payment_gateway extends jigoshop_payment_gateway {
+		class jigoshop_swipehq extends jigoshop_payment_gateway {
 		
-		public function __construct() {
-                parent::__construct();          /* installs our gateway options in the settings */
-        	$this->id			= 'swipehq_payment_gateway';
-        	$this->icon 			= plugins_url( 'checkout-logo.png', __FILE__ );
-        	$this->has_fields 		= false;
-                $this->payment_url              = trim(get_option( 'jigoshop_payment_url' ).'/');
+		public function __construct(){
+			parent::__construct();
+			$this->id				= 'swipehq';
+			$this->icon 			= plugins_url( 'checkout-logo.png', __FILE__ );
+			$this->has_fields 		= false;
+			
+			$this->merchant_id		= Jigoshop_Base::get_options()->get_option('jigoshop_swipehq_merchant_id');
+			$this->api_key			= Jigoshop_Base::get_options()->get_option('jigoshop_swipehq_api_key');
+			$this->api_url			= trim(Jigoshop_Base::get_options()->get_option('jigoshop_swipehq_api_url'), '/');
+			$this->payment_page_url = trim(Jigoshop_Base::get_options()->get_option('jigoshop_swipehq_payment_page_url'), '/');
 		
-                $this->enabled			= get_option( 'jigoshop_swipehq_enabled' );
-                $this->title 			= get_option( 'jigoshop_tgm_swipehq_payment_gateway_title' );
-                $this->description 		= get_option( 'jigoshop_tgm_swipehq_payment_gateway_description' );
+			$this->enabled			= Jigoshop_Base::get_options()->get_option('jigoshop_swipehq_enabled');
+			$this->title 			= Jigoshop_Base::get_options()->get_option('jigoshop_swipehq_title');
+			$this->description 		= Jigoshop_Base::get_options()->get_option('jigoshop_swipehq_description');
 
-                add_action( 'jigoshop_update_options', array( &$this, 'process_admin_options' ) );
-                add_option( 'jigoshop_swipehq_enabled', 'no' );
-                add_option( 'jigoshop_tgm_swipehq_payment_gateway_title', '' );
-                add_option( 'jigoshop_tgm_swipehq_payment_gateway_description', '' );
-    
-    		add_action( 'thankyou_swipehq_payment_gateway', array( &$this, 'thankyou_page' ) );
-                add_action('receipt_swipehq_payment_gateway', array(&$this, 'receipt_page'));
-                add_action('valid-swipehq-payment-request', array(&$this, 'successful_request'));
-                add_action('init', array(&$this, 'check_swipe_response'));
+			add_action( 'admin_notices', array( $this, 'swipehq_notices' ) );
+			
+			add_action('thankyou_swipehq', array( &$this, 'thankyou_page' ) );
+			add_action('receipt_swipehq', array(&$this, 'receipt_page'));
+			add_action('valid-swipehq-payment-request', array(&$this, 'successful_request'));
+			add_action('init', array(&$this, 'check_swipe_response'));
     	} 
 
     
 		/* Construct our function to output and display our gateway
 		------------------------------------------------------------ */
 		
-		public function admin_options() {
-                ?>
-                <thead><tr><th scope="col" width="200px"><?php echo apply_filters( 'tgm_jigoshop_swipehq_payment_gateway_title', 'Swipe HQ Checkout' ); ?></th><th scope="col" class="desc"><?php echo apply_filters( 'tgm_jigoshop_swipehq_payment_gateway_description', 'SwipeHQ is a hub for integrated payment solutions that enables small businesses in New Zealand to transact smarter, better and cheaper than ever before..' ); ?></th></tr></thead>
-    		<tr>
-	        	<td class="titledesc"><?php echo apply_filters( 'tgm_jigoshop_enable_swipehq_payment_gateway_title', 'Enable Swipe HQ?' ) ?>:</td>
-                        <td class="forminp">
-                                <select name="jigoshop_swipehq_enabled" id="jigoshop_swipehq_enabled" style="min-width:100px;">
-                                <option value="yes" <?php if ( get_option( 'jigoshop_swipehq_enabled' ) == 'yes' ) echo 'selected="selected"'; ?>><?php _e( 'Yes', 'jigoshop' ); ?></option>
-                                <option value="no" <?php if ( get_option( 'jigoshop_swipehq_enabled' ) == 'no' ) echo 'selected="selected"'; ?>><?php _e( 'No', 'jigoshop' ); ?></option>
-                                </select>
-                        </td>
-	    	</tr>
-	    	<tr>
-	        	<td class="titledesc"><a href="#" tip="<?php echo apply_filters( 'tgm_jigoshop_method_tooltip_description', 'This controls the title which the user sees during checkout.' ); ?>" class="tips" tabindex="99"></a><?php echo apply_filters( 'tgm_jigoshop_method_tooltip_title', 'Method Title' ) ?>:</td>
-                        <td class="forminp">
-                                <input class="input-text" type="text" name="jigoshop_tgm_swipehq_payment_gateway_title" id="jigoshop_tgm_swipehq_payment_gateway_title" value="<?php if ( $value = get_option( 'jigoshop_tgm_swipehq_payment_gateway_title' ) ) echo $value; else echo 'Swipe HQ Checkout'; ?>" />
-                        </td>
-	    	</tr>
-	    	<tr>
-	        	<td class="titledesc"><a href="#" tip="<?php echo apply_filters( 'tgm_jigoshop_message_tooltip_description', 'This controls the description which the user sees during checkout.' ); ?>" class="tips" tabindex="99"></a><?php echo apply_filters( 'tgm_jigoshop_message_tooltip_title', 'Description' ) ?>:</td>
-                        <td class="forminp">
-                                <input class="input-text wide-input" type="text" name="jigoshop_tgm_swipehq_payment_gateway_description" id="jigoshop_tgm_swipehq_payment_gateway_description" value="<?php if ( $value = get_option( 'jigoshop_tgm_swipehq_payment_gateway_description' ) ) echo $value; ?>" />
-                        </td>
-	    	</tr>
-                <tr>
-	        	<td class="titledesc"><a href="#" tip="<?php echo apply_filters( 'tgm_jigoshop_message_tooltip_description', 'List of supported currencies is available at API Credentials under Settings of your Swipe HQ Checkout Admin Page.' ); ?>" class="tips" tabindex="99"></a><?php echo apply_filters( 'tgm_jigoshop_message_tooltip_title', 'Currency Code' ) ?>:</td>
-                        <td class="forminp">
-                                <input class="input-text" type="text" name="jigoshop_currency" id="jigoshop_currency" value="<?php if ( $value = get_option( 'jigoshop_currency' ) ) echo $value; ?>" />
-                        </td>
-	    	</tr>
-                <tr>
-	        	<td class="titledesc"><a href="#" tip="<?php echo apply_filters( 'tgm_jigoshop_message_tooltip_description', 'Merchant ID is available at API Credentials under Settings of your Swipe HQ Checkout Admin Page.' ); ?>" class="tips" tabindex="99"></a><?php echo apply_filters( 'tgm_jigoshop_message_tooltip_title', 'Merchant ID' ) ?>:</td>
-                        <td class="forminp">
-                                <input class="input-text wide-input" type="text" name="jigoshop_merchant_id" id="jigoshop_merchant_id" value="<?php if ( $value = get_option( 'jigoshop_merchant_id' ) ) echo $value; ?>" />
-                        </td>
-	    	</tr>
-                <tr>
-	        	<td class="titledesc"><a href="#" tip="<?php echo apply_filters( 'tgm_jigoshop_message_tooltip_description', 'Given to Merchant by Swipe HQ' ); ?>" class="tips" tabindex="99"></a><?php echo apply_filters( 'tgm_jigoshop_message_tooltip_title', 'API Key' ) ?>:</td>
-                        <td class="forminp">
-                                <input class="input-text wide-input" type="text" name="jigoshop_api_key" id="jigoshop_api_key" value="<?php if ( $value = get_option( 'jigoshop_api_key' ) ) echo $value; ?>" />
-                        </td>
-	    	</tr>
-                <tr>
-	        	<td class="titledesc"><a href="#" tip="<?php echo apply_filters( 'tgm_jigoshop_message_tooltip_description', 'API URL is available at API Credentials under Settings of your Swipe HQ Checkout Admin Page.' ); ?>" class="tips" tabindex="99"></a><?php echo apply_filters( 'tgm_jigoshop_message_tooltip_title', 'API URL' ) ?>:</td>
-                        <td class="forminp">
-                                <input class="input-text wide-input" type="text" name="jigoshop_api_url" id="jigoshop_api_url" value="<?php if ( $value = get_option( 'jigoshop_api_url' ) ) echo $value; ?>" />
-                        </td>
-	    	</tr>
-                <tr>
-	        	<td class="titledesc"><a href="#" tip="<?php echo apply_filters( 'tgm_jigoshop_message_tooltip_description', 'Payment URL is available at API Credentials under Settings of your Swipe HQ Checkout Admin Page.' ); ?>" class="tips" tabindex="99"></a><?php echo apply_filters( 'tgm_jigoshop_message_tooltip_title', 'Payment URL' ) ?>:</td>
-                        <td class="forminp">
-                                <input class="input-text wide-input" type="text" name="jigoshop_payment_url" id="jigoshop_payment_url" value="<?php if ( $value = get_option( 'jigoshop_payment_url' ) ) echo $value; ?>" />
-                        </td>
-	    	</tr>
-                <?php
-                }
+    	public function get_default_options(){
+    		$defaults = array();
+    		
+    		// Define the Section name for the Jigoshop_Options
+    		$defaults[] = array( 
+    				'name' => 
+    					__('Swipe Checkout', 'jigoshop') . 
+    					'<img style="vertical-align:middle;margin-top:-4px;margin-left:10px;" src="'.plugins_url( 'checkout-logo.png', __FILE__ ).'" >'
+    				
+    				, 
+    				'type' => 'title', 
+    				'desc' => __('This module allows you to pay with <a href="https://www.swipehq.com">Swipe Checkout</a>.', 'jigoshop'),
+    				
+    		);
+    		
+    		// List each option in order of appearance with details
+    		$defaults[] = array(
+    				'name'		=> __('Enable Swipe Checkout','jigoshop'),
+    				'desc' 		=> '',
+    				'tip' 		=> '',
+    				'id' 		=> 'jigoshop_swipehq_enabled',
+    				'std' 		=> 'yes',
+    				'type' 		=> 'checkbox',
+    				'choices'	=> array(
+    						'no'			=> __('No', 'jigoshop'),
+    						'yes'			=> __('Yes', 'jigoshop')
+    				)
+    		);
+    		
+    		$defaults[] = array(
+    				'name'		=> __('Method Title','jigoshop'),
+    				'desc' 		=> '',
+    				'tip' 		=> __('This controls the title which the user sees during checkout.','jigoshop'),
+    				'id' 		=> 'jigoshop_swipehq_title',
+    				'std' 		=> __('Swipe Checkout','jigoshop'),
+    				'type' 		=> 'text'
+    		);
+    		$defaults[] = array(
+    				'name'		=> __('Customer Message','jigoshop'),
+    				'desc' 		=> '',
+    				'tip' 		=> __('This controls the description which the user sees during checkout.','jigoshop'),
+    				'id' 		=> 'jigoshop_swipehq_description',
+    				'std' 		=> __('Pay with Swipe Checkout', 'jigoshop'),
+    				'type' 		=> 'longtext'
+    		);
+    		$defaults[] = array(
+    				'name'		=> __('Merchant ID','jigoshop'),
+    				'desc' 		=> 'Find this in your Swipe Merchant login under Settings -> API Credentials',
+    				'tip' 		=> '',
+    				'id' 		=> 'jigoshop_swipehq_merchant_id',
+    				'std' 		=> '',
+    				'type' 		=> 'text'
+    		);
+    		$defaults[] = array(
+    				'name'		=> __('API Key','jigoshop'),
+    				'desc' 		=> 'Find this in your Swipe Merchant login under Settings -> API Credentials',
+    				'tip' 		=> '',
+    				'id' 		=> 'jigoshop_swipehq_api_key',
+    				'std' 		=> '',
+    				'type' 		=> 'longtext'
+    		);
+    		$defaults[] = array(
+    				'name'		=> __('API Url','jigoshop'),
+    				'desc' 		=> 'Find this in your Swipe Merchant login under Settings -> API Credentials',
+    				'tip' 		=> '',
+    				'id' 		=> 'jigoshop_swipehq_api_url',
+    				'std' 		=> '',
+    				'type' 		=> 'longtext'
+    		);
+    		$defaults[] = array(
+    				'name'		=> __('Payment Page Url','jigoshop'),
+    				'desc' 		=> 'Find this in your Swipe Merchant login under Settings -> API Credentials',
+    				'tip' 		=> '',
+    				'id' 		=> 'jigoshop_swipehq_payment_page_url',
+    				'std' 		=> '',
+    				'type' 		=> 'longtext'
+    		);
+    		
+    		return $defaults;
+    	}
     	
+    	public function is_available() {
+    		if ( $this->enabled != 'yes' ) {
+    			return false;
+    		}
+    		$currency = Jigoshop_Base::get_options()->get_option( 'jigoshop_currency' );
+    		$acceptedCurrencies = $this->getAcceptedCurrencies();
+    		if($acceptedCurrencies !== null && !in_array($currency, $acceptedCurrencies)){
+    			return false;
+    		}
+    		return true;
+    	}
+    	
+    	    	
     
 		/* Display description for payment fields and thank you page
 		------------------------------------------------------------ */
@@ -130,21 +179,6 @@ function swipehq_jigoshop_payment_gateway() {
                         do_action( 'tgm_jigoshop_thankyou_page' ); // allow for insertion of custom code if needed
 		}
 		
-    
-		/* Update options in the database upon save
-		------------------------------------------------------------ */
-		
-                public function process_admin_options() {
-                    if( isset( $_POST['jigoshop_swipehq_enabled'] ) ) update_option( 'jigoshop_swipehq_enabled', jigowatt_clean( $_POST['jigoshop_swipehq_enabled'] ) ); else @delete_option( 'jigoshop_swipehq_enabled' );
-                    if( isset( $_POST['jigoshop_merchant_id'] ) ) update_option( 'jigoshop_merchant_id', jigowatt_clean( $_POST['jigoshop_merchant_id'] ) ); else @delete_option( 'jigoshop_merchant_id' );
-                    if( isset( $_POST['jigoshop_api_key'] ) ) update_option( 'jigoshop_api_key', 	jigowatt_clean( $_POST['jigoshop_api_key'] ) ); else @delete_option( 'jigoshop_api_key' );
-                    if( isset( $_POST['jigoshop_tgm_swipehq_payment_gateway_title'] ) ) update_option( 'jigoshop_tgm_swipehq_payment_gateway_title', 	jigowatt_clean( $_POST['jigoshop_tgm_swipehq_payment_gateway_title'] ) ); else @delete_option( 'jigoshop_tgm_swipehq_payment_gateway_title' );
-                    if( isset( $_POST['jigoshop_tgm_swipehq_payment_gateway_description'] ) ) update_option( 'jigoshop_tgm_swipehq_payment_gateway_description', 	jigowatt_clean( $_POST['jigoshop_tgm_swipehq_payment_gateway_description'] ) ); else @delete_option( 'jigoshop_tgm_swipehq_payment_gateway_description' );
-                    if( isset( $_POST['jigoshop_currency'] ) ) update_option( 'jigoshop_currency', 	jigowatt_clean( $_POST['jigoshop_currency'] ) ); else @delete_option( 'jigoshop_currency' );
-                    if( isset( $_POST['jigoshop_api_url'] ) ) update_option( 'jigoshop_api_url', 	jigowatt_clean( $_POST['jigoshop_api_url'] ) ); else @delete_option( 'jigoshop_api_url' );
-                    if( isset( $_POST['jigoshop_payment_url'] ) ) update_option( 'jigoshop_payment_url', 	jigowatt_clean( $_POST['jigoshop_payment_url'] ) ); else @delete_option( 'jigoshop_payment_url' );
-                }
-    	
 	
 		/* Process order 
 		------------------------------------------------------------ */
@@ -194,8 +228,8 @@ function swipehq_jigoshop_payment_gateway() {
 			$items .= $item['qty'] . ' x ' . html_entity_decode(apply_filters('jigoshop_order_product_title', $item['name'], $_product), ENT_QUOTES, 'UTF-8').', ';
                     }
                     $params = array (
-                        'merchant_id'           => get_option( 'jigoshop_merchant_id' ),
-                        'api_key'               => get_option( 'jigoshop_api_key' ),
+                        'merchant_id'           => $this->merchant_id,
+                        'api_key'               => $this->api_key,
                         'td_item'               => trim($items, ', '),
                         'td_description'        => $product_details,
                         'td_amount'             => $order->order_total,
@@ -204,12 +238,12 @@ function swipehq_jigoshop_payment_gateway() {
                         'td_currency'           => strtoupper(trim(get_option( 'jigoshop_currency' )))
                     );
                     
-                    $response = $this->post_to_url(trim(get_option( 'jigoshop_api_url' ),'/').'/createTransactionIdentifier.php', $params);
+                    $response = $this->post_to_url($this->api_url.'/createTransactionIdentifier.php', $params);
                     $response_data = json_decode($response);
                     if($response_data->response_code == 200 && !empty($response_data->data->identifier)){
                         $trans_id = $response_data->data->identifier;
                         echo '<p>'.__('Thank you for your order, please click the button below to pay with Swipe HQ Checkout.', 'jigoshop').'</p>';
-                        echo $this -> generate_swipe_form($trans_id,$order_id);
+                        echo $this -> generate_swipehq_form($trans_id,$order_id);
                     }
                     else{
                         if(isset($response_data->message))
@@ -221,9 +255,9 @@ function swipehq_jigoshop_payment_gateway() {
                    
                 }
 
-                function generate_swipe_form($trans_id,$order_id){
+                function generate_swipehq_form($trans_id,$order_id){
                     $order = new jigoshop_order( $order_id );
-                    return '<form action="'.$this->payment_url.'?identifier_id='.$trans_id.'&checkout=true" method="post" id="swipehq_checkout_form">
+                    return '<form action="'.$this->payment_page_url.'?identifier_id='.$trans_id.'&checkout=true" method="post" id="swipehq_checkout_form">
 				<input type="submit" class="button alt" id="submit_swipehq_checkout_form" value="'.__('Pay via Swipe HQ Checkout', 'jigoshop').'" /> <a class="button cancel" href="'.esc_url($order->get_cancel_order_url()).'">'.__('Cancel order &amp; restore cart', 'jigoshop').'</a>
 				<script type="text/javascript">
 					jQuery(function(){
@@ -284,13 +318,13 @@ function swipehq_jigoshop_payment_gateway() {
                         $order = new jigoshop_order((int) $posted['td_user_data'] );
                         //Validate Transaction
                         $params = array(
-                            'merchant_id'       => get_option( 'jigoshop_merchant_id' ),
-                            'api_key'           => get_option( 'jigoshop_api_key' ),
+                            'merchant_id'       => $this->merchant_id,
+                            'api_key'           => $this->api_key,
                             'transaction_id'    => $posted['transaction_id'],
                             'identifier_id'     => $posted['identifier_id']
 
                         );
-                        $response = $this->post_to_url(trim(get_option( 'jigoshop_api_url' ),'/').'/verifyTransaction.php', $params);
+                        $response = $this->post_to_url($this->api_url.'/verifyTransaction.php', $params);
                         $response_data = json_decode($response);
                         if($response_data->response_code == 200){
                             if(($response_data->data->status == 'accepted' || $response_data->data->status == 'test-accepted') && $response_data->data->transaction_approved == 'yes'){
@@ -311,6 +345,37 @@ function swipehq_jigoshop_payment_gateway() {
                         }
                     }
                 }
+                
+                
+                /**
+                 *  Admin Notices for conditions under which this plugin is available on a Shop
+                 */
+                public function swipehq_notices() {
+                	 
+                	if ( $this->enabled == 'no' ) return;
+                
+                	$currency = Jigoshop_Base::get_options()->get_option( 'jigoshop_currency' );
+                	$acceptedCurrencies = $this->getAcceptedCurrencies();
+                	
+                	if ($acceptedCurrencies !== null && !in_array($currency, $acceptedCurrencies)) {
+                		echo '<div class="error"><p>'.__('Swipe Checkout does not support the currency your Jigoshop is in: '.$currency.'. Swipe Checkout supports these currencies: '.join(', ', $acceptedCurrencies).'.','jigoshop').'</p></div>';
+                		Jigoshop_Base::get_options()->set_option( 'jigoshop_swipehq_enabled', 'no' );
+                	}
+           
+                }
+                
+                protected function getAcceptedCurrencies(){
+                	if($this->api_url && $this->api_key && $this->merchant_id){
+                		$response = $this->post_to_url($this->api_url . '/fetchCurrencyCodes.php', array(
+                			'merchant_id' => $this->merchant_id,
+                			'api_key' => $this->api_key	
+                		));
+                		$responseArr = json_decode($response, true);
+                		return $responseArr['data'];
+                	}else{
+                		return null;
+                	}
+                }
 	
 	}
 
@@ -318,9 +383,9 @@ function swipehq_jigoshop_payment_gateway() {
 	/* Add our Swipe HQ payment gateway to the Jigoshop gateways
 	------------------------------------------------------------ */
  
-	add_filter( 'jigoshop_payment_gateways', 'add_swipehq_payment_gateway' );
-	function add_swipehq_payment_gateway( $methods ) {
-		$methods[] = 'jigoshop_swipehq_payment_gateway'; return $methods;
+	add_filter( 'jigoshop_payment_gateways', 'add_swipehq' );
+	function add_swipehq( $methods ) {
+		$methods[] = 'jigoshop_swipehq'; return $methods;
 	}
 	
 }
