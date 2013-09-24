@@ -3,7 +3,7 @@
 Plugin Name: Swipe Checkout for Jigoshop
 Plugin URI: http://www.swipehq.com
 Description: A payment gateway for Jigoshop
-Version: 3.0.0
+Version: 3.1.0
 Author: Swipe
 Author URI: http://www.swipehq.com
 */
@@ -131,7 +131,58 @@ function swipehq_jigoshop() {
     		);
     		$defaults[] = array(
     				'name'		=> __('Payment Page Url','jigoshop'),
-    				'desc' 		=> 'Find this in your Swipe Merchant login under Settings -> API Credentials',
+    				'desc' 		=> 'Find this in your Swipe Merchant login under Settings -> API Credentials
+                                    <script>
+                                    
+                                        function check_config(){
+                                            var paymentPageURLInput = jQuery("input[name=\"jigoshop_options[jigoshop_swipehq_payment_page_url]\"]");
+                                            var formTable = paymentPageURLInput.closest("table");
+                                            var allRows = formTable.find("tr");
+                                            var resultRow = jQuery(allRows[allRows.length-1]);
+
+
+
+                                            var merchantId = jQuery("input[name=\"jigoshop_options[jigoshop_swipehq_merchant_id]\"]").val();
+                                            var apiKey = jQuery("input[name=\"jigoshop_options[jigoshop_swipehq_api_key]\"]").val();
+                                            var apiURL = jQuery("input[name=\"jigoshop_options[jigoshop_swipehq_api_url]\"]").val();
+                                            var paymentURL = jQuery("input[name=\"jigoshop_options[jigoshop_swipehq_payment_page_url]\"]").val();
+
+                                             
+                                            var currencySelected = "'.Jigoshop_Base::get_options()->get_option( 'jigoshop_currency' ).'";
+
+
+                                            var testUrl = "'.plugins_url( 'test-plugin.php', __FILE__ ).'";
+
+                                             
+                                            var urlToLoad = testUrl+"?merchant_id="+merchantId+"&api_key="+apiKey+"&api_url="+apiURL+"&payment_page_url="+paymentURL+"&currency="+currencySelected;
+
+                                            window.open(urlToLoad);
+
+                                       }
+
+                                        jQuery(document).ready(function(){
+                                            var paymentPageURLInput = jQuery("input[name=\"jigoshop_options[jigoshop_swipehq_payment_page_url]\"]");
+                                            var formTable = paymentPageURLInput.closest("table");
+                                            
+                                            if(formTable!=null && typeof(formTable)!="undefined"){
+                                                var newRow = document.createElement("tr");
+                                                newRow.setAttribute("valign", "top");
+                                                
+                                                
+                                                formTable.append(newRow);
+
+                                                var buttonToInsert = document.createElement("input");
+                                                buttonToInsert.setAttribute("type", "button");
+                                                buttonToInsert.setAttribute("style", "font-size:20px;");
+                                                buttonToInsert.setAttribute("value", "Check Config");
+                                                buttonToInsert.setAttribute("name", "checkconfig");
+                                                buttonToInsert.setAttribute("onclick", "check_config();");
+                                                
+                                                
+                                                jQuery(newRow).append(buttonToInsert);
+                                            }
+                                        });
+                                    </script>',
     				'tip' 		=> '',
     				'id' 		=> 'jigoshop_swipehq_payment_page_url',
     				'std' 		=> '',

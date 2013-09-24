@@ -1,6 +1,6 @@
 Jigoshop Swipe plugin
 
-Version:	3.0.0 / 24 Sep 2013
+Version:	3.1.0 / 24 Sep 2013
 Copyright:	(c) 2012-2013, Optimizer Ltd.
 Link:		http://www.swipehq.com/checkout/
 
@@ -61,3 +61,5 @@ CHANGE LOG
 - Adding Settings link in Plugins page
 - Changing currency check to be programmatic rather than done by user
 
+3.1.0
+- Added check configuration test button
